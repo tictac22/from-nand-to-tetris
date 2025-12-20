@@ -4,7 +4,9 @@ FILES = [
     'max',
     'maxL',
     'rect',
-    'rectL'
+    'rectL',
+    'pong',
+    'pongL'
 ]
 
 
