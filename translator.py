@@ -41,18 +41,79 @@ comparator_table = {
   "D&A": "000000",
   "D|A": "010101"
 }
+
+predifend_symbol_table = {
+    'R0': '0',
+    'R1': '1',
+    'R2': '2',
+    'R3': '3',
+    'R4': '4',
+    'R5': '5',
+    'R6': '6',
+    'R7': '7',
+    'R8': '8',
+    'R9': '9',
+    'R10': '10',
+    'R11': '11',
+    'R12': '12',
+    'R13': '13',
+    'R14': '14',
+    'R15': '15',
+    'SCREEN': '16348',
+    'KBD': '24576',
+    'SP': '0',
+    'LCL': '1',
+    'ARG': '2',
+    'THIS': '3',
+    'THAT': '4'
+}
+line_counter = 0
+def read_first_time(file_name: str) -> None:
+    global line_counter
+    line_counter = 0
+    with open(file_name, 'r') as file_input:
+        line = file_input.readline()
+        while line:
+            # skip comments or empty lines
+            if '//' in line or len(line) == 1:
+                line = file_input.readline()
+                continue
+            line = line.replace(" ", '').replace('\n','')
+            first_character = line[0]
+            if first_character == "(":
+                closed_paretheses = line.find(')')
+                symbol = line[1:closed_paretheses]
+                predifend_symbol_table[symbol] = line_counter
+                line = file_input.readline() 
+                continue
+            line = file_input.readline() 
+            line_counter += 1
+                
+
+
 def translate_asm(file_name: str):
+    read_first_time(file_name)
     dot_file = file_name.find('.')
     name_file = file_name[0:dot_file]
     with open(f'{name_file}.asm', 'r') as file_input, open(f'{name_file}.out', 'w') as output_file:
         line = file_input.readline()
         while line:
-            first_character = line[0]
+            # skip comments or empty lines
+            if '//' in line or len(line) == 1 or line[0] == '(':
+                line = file_input.readline()
+                continue
 
+            line = line.replace(" ", '').replace('\n','')
+            first_character = line[0]
             # A instruction
             if first_character == "@":
-                number = line[1:]
-                binary_number = bin((int(number)))[2:]
+                # predefined symbol
+                if line[1:] in predifend_symbol_table:
+                    symbol = predifend_symbol_table[line[1:]]
+                    binary_number = bin((int(symbol)))[2:]
+                else:
+                    number = line[1:]
+                    binary_number = bin((int(number)))[2:]
 
                 output_string = '0'
 
@@ -77,14 +138,21 @@ def translate_asm(file_name: str):
                 A_bit = '0'
 
                 comparator_bits = ''
+
                 if comparator_string in comparator_table:
                     comparator_bits = comparator_table[comparator_string]
+                else:
+                    comparator_bits = comparator_table[comparator_string.replace('M','A')]
+                    A_bit = '1'
 
-                destitation_bits = destitaion_table[line[:equal_sign_place]]
+                if line[:equal_sign_place] in destitaion_table:
+                    destitation_bits = destitaion_table[line[:equal_sign_place]]
+                else:
+                    destitation_bits = '000'
 
                 jump_bits = '000'
                 if semicolon_place != -1:
-                    jump_bits = jump_table[line[:semicolon_place]]
+                    jump_bits = jump_table[line[semicolon_place+1:]]
 
 
                 output_string += A_bit + comparator_bits + destitation_bits + jump_bits + '\n'
@@ -94,4 +162,42 @@ def translate_asm(file_name: str):
             line = file_input.readline()
 
 if __name__ == '__main__':
-    translate_asm('add.asm')
+    translate_asm('max.asm')
+
+
+
+# translator
+# 0000000000000000
+# 1111110000010000
+# 0000000000000001
+# 1111010011010000
+# 0000000000001010
+# 1110001100000001
+# 0000000000000001
+# 1111110000010000
+# 0000000000001100
+# 1110101010000111
+# 0000000000000000
+# 1111110000010000
+# 0000000000000010
+# 1110001100001000
+# 0000000000001110
+# 1110101010000111
+
+
+# 0000000000000000
+# 1111110000010000
+# 0000000000000001
+# 1111010011010000
+# 0000000000010000
+# 1110001100000001
+# 0000000000000001
+# 1111110000010000
+# 0000000000010010
+# 1110101010000111
+# 0000000000000000
+# 1111110000010000
+# 0000000000000010
+# 1110001100001000
+# 0000000000010100
+# 1110101010000111
