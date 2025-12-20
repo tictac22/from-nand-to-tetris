@@ -3,7 +3,8 @@ FILES = [
     'add',
     'max',
     'maxL',
-    'rect'
+    'rect',
+    'rectL'
 ]
 
 
