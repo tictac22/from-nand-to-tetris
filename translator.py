@@ -8,7 +8,8 @@ destitaion_table = {
     'A': '100',
     'AM': '101',
     'AD': '110',
-    'ADM': '111'
+    'ADM': '111',
+    'MD': '011'
 }
 
 jump_table = {
@@ -59,7 +60,7 @@ predifend_symbol_table = {
     'R13': '13',
     'R14': '14',
     'R15': '15',
-    'SCREEN': '16348',
+    'SCREEN': '16384',
     'KBD': '24576',
     'SP': '0',
     'LCL': '1',
@@ -86,14 +87,16 @@ def read_first_time(file_name: str) -> None:
                 predifend_symbol_table[symbol] = line_counter
                 line = file_input.readline() 
                 continue
-            line = file_input.readline() 
+            line = file_input.readline()
             line_counter += 1
                 
 
-
+symbols_counter = 16
 def translate_asm(file_name: str):
     read_first_time(file_name)
     dot_file = file_name.find('.')
+    global symbols_counter
+    symbols_counter = 16
     name_file = file_name[0:dot_file]
     with open(f'{name_file}.asm', 'r') as file_input, open(f'{name_file}.out', 'w') as output_file:
         line = file_input.readline()
@@ -111,6 +114,12 @@ def translate_asm(file_name: str):
                 if line[1:] in predifend_symbol_table:
                     symbol = predifend_symbol_table[line[1:]]
                     binary_number = bin((int(symbol)))[2:]
+                # variable symbols
+                elif line[1:] not in predifend_symbol_table and str.isdigit(line[1:]) is False:
+                    predifend_symbol_table[line[1:]] = symbols_counter
+                    binary_number = bin(symbols_counter)[2:]
+                    symbols_counter += 1
+                # numbers
                 else:
                     number = line[1:]
                     binary_number = bin((int(number)))[2:]
@@ -162,5 +171,5 @@ def translate_asm(file_name: str):
             line = file_input.readline()
 
 if __name__ == '__main__':
-    translate_asm('maxL.asm')
-
+    file_name = input("File Name: \n")
+    translate_asm(file_name)

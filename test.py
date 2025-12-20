@@ -2,15 +2,16 @@
 FILES = [
     'add',
     'max',
-    'maxL'
+    'maxL',
+    'rect'
 ]
 
 
 from translator import translate_asm
 
 for FILE_NAME in FILES:
-    translate_asm(f'{FILE_NAME}.asm')
     print(f"Comparing {FILE_NAME}.asm")
+    translate_asm(f'{FILE_NAME}.asm')
     with open(f'{FILE_NAME}.out', 'r') as file_output, open(f'{FILE_NAME}.test', 'r') as test_file:
         output_line = file_output.readline()
         test_line = test_file.readline()        
