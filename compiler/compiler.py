@@ -1,5 +1,3 @@
-from os import stat_result
-from re import sub
 import sys
 from enum import Enum
 
@@ -7,7 +5,7 @@ class TokenType(Enum):
     keyword = 1
     symbol = 2
     integerConstant = 3
-    StringConstant = 4
+    stringConstant = 4
     identifier = 5
 
 class Token:
@@ -20,10 +18,14 @@ keywords = {"class", "constructor", "function", "method",
             "true", "false", "null", "this", "let", "do", "if", 
             "else", "while", "return"
 }
+xml_symbols = {
+    "<" : "&lt;"
+}
 class Tokenizer:
     def __init__(self, file_path:str) -> None:
 
         file = open(file_path)
+        self.file_name = file_path.split("/")[1].split('.')[0]
         self.file = ''.join(file.readlines())
         self.char = self.file[0]
         self.file_length = len(self.file)
@@ -46,7 +48,10 @@ class Tokenizer:
             current_char == ';' or current_char == '+' or current_char == '-' or current_char == '*' or \
             current_char == '/' or current_char == '&' or current_char == '|' or current_char == '<' or \
             current_char == '>' or current_char == '=' or current_char == '~':
-                token = Token(TokenType.symbol, current_char)
+                if current_char in xml_symbols:
+                    token = Token(TokenType.symbol, xml_symbols[current_char])
+                else:
+                    token = Token(TokenType.symbol, current_char)
         elif current_char == '"':
             substring =  ''
             self.nextToken()
@@ -56,7 +61,7 @@ class Tokenizer:
                 self.nextToken()
                 offset += 1
             substring = self.file[start_position: start_position + offset]
-            token = Token(TokenType.StringConstant, substring)
+            token = Token(TokenType.stringConstant, substring)
         else:
             if(self.is_letter(self.char)):
                 substring = self.get_string()
@@ -66,7 +71,6 @@ class Tokenizer:
                     token = Token(TokenType.identifier, substring)
             elif self.char.isnumeric():
                 number = self.get_number()
-                print(number)
                 token = Token(TokenType.integerConstant, number)
         if token:
             self.tokens.append(token)
@@ -107,16 +111,29 @@ class Tokenizer:
     def peekChar(self, char: str) -> bool:
         return self.file[self.position + 1] == char
 
-    def print_tokens(self) -> None:
+    def print_tokens(self, inConsole:bool = True) -> None:
+        if inConsole:
+            print("<tokens>")
+        output = '<tokens>\n'
         for token in self.tokens:
             type_name = str(token.tokenType).split(".")[1]
-            print("<" + str(type_name) + ">" + " " + token.value + ' ' + "</" + str(type_name) + '>')
+            string = "<" + str(type_name) + ">" + " " + token.value + ' ' + "</" + str(type_name) + '>'
+            if inConsole:
+                print(string)
+            output += (string + "\n")
+        output = output + "</tokens>\n"
+        file = open("lexer_tests" + "/" + self.file_name + 'T_output.xml', 'w')
+        file.write(output)
+        file.close()
+        if inConsole:
+            print("</tokens>")
 
-file_path = sys.argv[1]
-tokenizer = Tokenizer(file_path)
+if __name__ == "__main__":
+    file_path = sys.argv[1]
+    tokenizer = Tokenizer(file_path)
 
-while tokenizer.hasMoreTokens():
-    tokenizer.advance()
-tokenizer.print_tokens()
+    while tokenizer.hasMoreTokens():
+        tokenizer.advance()
+    tokenizer.print_tokens()
 
 
