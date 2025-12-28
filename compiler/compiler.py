@@ -25,7 +25,7 @@ class Tokenizer:
     def __init__(self, file_path:str) -> None:
 
         file = open(file_path)
-        self.file_name = file_path.split("/")[1].split('.')[0]
+        self.file_name = file_path.replace("/", '_')
         self.file = ''.join(file.readlines())
         self.char = self.file[0]
         self.file_length = len(self.file)
@@ -33,11 +33,11 @@ class Tokenizer:
         self.tokens = []
 
     def skip_whitespace(self) -> None:
+        while(self.char == ' '):
+            self.nextToken()
         if self.char == '/' and (self.peekChar('/') or self.peekChar('*')):
             while(self.char != '\n'):
                 self.nextToken()
-        while(self.char == ' '):
-            self.nextToken()
         pass 
     def advance(self) -> None:
         self.skip_whitespace()
@@ -108,6 +108,10 @@ class Tokenizer:
         if output != '':
             self.prevToken()
         return output   
+    def peek(self, jump: int = 1) -> str:
+        if self.hasMoreTokens():
+            return self.file[self.position + jump]
+        return ''
     def peekChar(self, char: str) -> bool:
         return self.file[self.position + 1] == char
 

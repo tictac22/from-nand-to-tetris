@@ -3,7 +3,10 @@ from compiler import Tokenizer
 
 
 files = [
-        'ArrayTest/Main.jack'
+        'ArrayTest/Main.jack',
+        'ExpressionLessSquare/Main.jack',
+        'ExpressionLessSquare/Square.jack',
+        'ExpressionLessSquare/SquareGame.jack'
 ]
 for file in files:
     tokenizer = Tokenizer(file)
