@@ -1,0 +1,122 @@
+from os import stat_result
+from re import sub
+import sys
+from enum import Enum
+
+class TokenType(Enum):
+    keyword = 1
+    symbol = 2
+    integerConstant = 3
+    StringConstant = 4
+    identifier = 5
+
+class Token:
+    def __init__(self, tokenType: TokenType, value: str) -> None:
+        self.tokenType = tokenType
+        self.value = value
+
+keywords = {"class", "constructor", "function", "method", 
+            "field", "static", "var", "int", "char", "boolean", "void", 
+            "true", "false", "null", "this", "let", "do", "if", 
+            "else", "while", "return"
+}
+class Tokenizer:
+    def __init__(self, file_path:str) -> None:
+
+        file = open(file_path)
+        self.file = ''.join(file.readlines())
+        self.char = self.file[0]
+        self.file_length = len(self.file)
+        self.position = 0
+        self.tokens = []
+
+    def skip_whitespace(self) -> None:
+        if self.char == '/' and (self.peekChar('/') or self.peekChar('*')):
+            while(self.char != '\n'):
+                self.nextToken()
+        while(self.char == ' '):
+            self.nextToken()
+        pass 
+    def advance(self) -> None:
+        self.skip_whitespace()
+        current_char = self.char
+        token = None
+        if current_char == '{' or current_char == '}' or current_char == '(' or current_char == ')' or \
+            current_char == '[' or current_char == ']' or current_char == '.' or current_char == ',' or \
+            current_char == ';' or current_char == '+' or current_char == '-' or current_char == '*' or \
+            current_char == '/' or current_char == '&' or current_char == '|' or current_char == '<' or \
+            current_char == '>' or current_char == '=' or current_char == '~':
+                token = Token(TokenType.symbol, current_char)
+        elif current_char == '"':
+            substring =  ''
+            self.nextToken()
+            start_position = self.position
+            offset = 0
+            while (self.char != '"'):
+                self.nextToken()
+                offset += 1
+            substring = self.file[start_position: start_position + offset]
+            token = Token(TokenType.StringConstant, substring)
+        else:
+            if(self.is_letter(self.char)):
+                substring = self.get_string()
+                if substring in keywords:
+                    token = Token(TokenType.keyword, substring)
+                elif substring != '':
+                    token = Token(TokenType.identifier, substring)
+            elif self.char.isnumeric():
+                number = self.get_number()
+                print(number)
+                token = Token(TokenType.integerConstant, number)
+        if token:
+            self.tokens.append(token)
+        self.nextToken()
+            
+    def hasMoreTokens(self) -> bool:
+        return self.position < self.file_length - 1
+
+    def nextToken(self) -> None:
+        if not self.hasMoreTokens():
+            return
+        self.position += 1
+        self.char = self.file[self.position]
+
+    def prevToken(self) -> None:
+        self.position -= 1
+        self.char = self.file[self.position]
+    def is_letter(self, char: str) -> bool:
+        return 'a' <= char and char <= 'z' or  'A' <= char and 'A' <= char and char <= "Z"
+    def tokenType(self) -> None:
+        pass
+    def get_string(self) -> str:
+        output = ''
+        while (self.is_letter(self.char)):
+            output += self.char
+            self.nextToken()
+        if output != '':
+            self.prevToken()
+        return output   
+    def get_number(self) -> str:
+        output = ''
+        while (self.char.isnumeric()):
+            output += self.char
+            self.nextToken()
+        if output != '':
+            self.prevToken()
+        return output   
+    def peekChar(self, char: str) -> bool:
+        return self.file[self.position + 1] == char
+
+    def print_tokens(self) -> None:
+        for token in self.tokens:
+            type_name = str(token.tokenType).split(".")[1]
+            print("<" + str(type_name) + ">" + " " + token.value + ' ' + "</" + str(type_name) + '>')
+
+file_path = sys.argv[1]
+tokenizer = Tokenizer(file_path)
+
+while tokenizer.hasMoreTokens():
+    tokenizer.advance()
+tokenizer.print_tokens()
+
+
