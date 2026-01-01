@@ -195,7 +195,6 @@ class Compiler:
         self.output += ( ' ' * 2 +  f'</subroutineDec>\n' )
 
     def compile_paramater_list(self, spaces):
-        print(spaces)
         left_bracket = self.tokens.popleft()
         self.create_xml_string(left_bracket, spaces //2)
 
@@ -252,6 +251,7 @@ class Compiler:
         while self.tokens[0].value in statementsType:
             if self.tokens[0].value == 'let':
                 self.compile_let(spaces)
+            break
         self.output +=  ( ' ' * (spaces - 2) + '</statements>\n' )
     def compile_let(self,spaces):
         self.output +=  ( ' ' * (spaces) + '<letStatement>\n' )
@@ -276,26 +276,56 @@ class Compiler:
         pass
     def compile_return(self):
         pass
-    def compile_expression(self, spaces):
+    def compile_expression(self, spaces, nonTerminal=True):
         self.output +=  ( ' ' * spaces + '<expression>\n' )
-        self.compile_term(spaces)
+        self.compile_term(spaces + 2)
         
         self.output +=  ( ' ' * spaces + '</expression>\n' )
 
+        print(self.tokens[0].value)
+        if nonTerminal:
+            semicolon = self.tokens.popleft()
+            self.create_xml_string(semicolon, spaces)
+
     def compile_term(self, spaces):
         self.output +=  ( ' ' * spaces + '<term>\n' )
+        if self.tokens[1].value == '.':
+            varNameIdentifier = self.tokens.popleft()
+            self.create_xml_string(varNameIdentifier, spaces)
 
+            dot = self.tokens.popleft()
+            self.create_xml_string(dot, spaces)
+
+            varNameIdentifier = self.tokens.popleft()
+            self.create_xml_string(varNameIdentifier, spaces)
+
+            leftBracket = self.tokens.popleft()
+            self.create_xml_string(leftBracket, spaces)
+
+            self.compile_expression_list(spaces + 2)
+
+            rightBracket = self.tokens.popleft()
+            print(self.tokens[0].value, "inside if")
+            self.create_xml_string(rightBracket, spaces)
+
+        else:
+            # TODO
+            stringConstant = self.tokens.popleft()
+            print(stringConstant.value, "stringConstnat")
+            self.create_xml_string(stringConstant, spaces)
         self.output +=  ( ' ' * spaces + '</term>\n' )
-        pass
-    def compile_expression_list(self):
-        pass
+    def compile_expression_list(self, spaces):
+        self.output +=  ( ' ' * spaces + '<expressionList>\n' )
+        self.compile_expression(spaces + 2, False)
+        self.output +=  ( ' ' * spaces + '<expressionList>\n' )
     def print_tokens(self) -> None:
         file = open("parsing_tests" + "/" + self.file_name + 'T_output.xml', 'w')
         file.write(self.output)
         file.close()
 
 if __name__ == "__main__":
-    file_path = sys.argv[1]
+    # file_path = sys.argv[1]
+    file_path = 'ArrayTest/Main.jack'
     tokenizer = Tokenizer(file_path)
 
     while tokenizer.hasMoreTokens():
