@@ -19,7 +19,10 @@ keywords = {"class", "constructor", "function", "method",
             "else", "while", "return"
 }
 xml_symbols = {
-    "<" : "&lt;"
+    "<" : "&lt;",
+    '>': '&gt;',
+    '"': '&quout;',
+    '&': '&amp;'
 }
 class Tokenizer:
     def __init__(self, file_path:str) -> None:
@@ -35,10 +38,17 @@ class Tokenizer:
     def skip_whitespace(self) -> None:
         while(self.char == ' '):
             self.nextToken()
-        if self.char == '/' and (self.peekChar('/') or self.peekChar('*')):
+        if self.char == '/' and self.peekChar('/'):
             while(self.char != '\n'):
                 self.nextToken()
-        pass 
+        if self.char == '/' and self.peekChar("*"):
+            self.nextToken()
+            self.nextToken()
+            self.nextToken()
+            while self.char != "*" or not self.peekChar('/'):
+                self.nextToken()
+            self.nextToken()
+            self.nextToken()
     def advance(self) -> None:
         self.skip_whitespace()
         current_char = self.char
