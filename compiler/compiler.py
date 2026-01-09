@@ -167,8 +167,9 @@ class Compiler:
         self.compile_class_var_dec()
 
         self.compile_subroutine(2)
-        # right_bracket = self.tokens.popleft()
-        # self.create_xml_string(right_bracket)
+        right_bracket = self.tokens.popleft()
+        self.create_xml_string(right_bracket, 0)
+        self.output += '</class>\n'
     
     def compile_class_var_dec(self):
         if self.tokens[0].value != 'static' or self.tokens[0].value != 'field':
@@ -216,7 +217,6 @@ class Compiler:
 
 
         self.compile_statements(spaces * 2)
-
         right_bracket = self.tokens.popleft()
         self.create_xml_string(right_bracket, spaces)
 
@@ -246,16 +246,32 @@ class Compiler:
 
     def compile_statements(self, spaces):
         self.output +=  ( ' ' * (spaces - 2) + '<statements>\n' )
-        statementsType = {'let', 'if', 'while', 'do', 'return'}
 
-        while self.tokens[0].value in statementsType:
-            if self.tokens[0].value == 'let':
-                self.compile_let(spaces)
-            break
+        statments = deque()
+        statments.append(self.tokens.popleft())
+        statmentsType = {'let', 'while', 'do', 'return'}
+        while statments:
+            statement = statments.popleft()
+            if statement.value == 'let':
+                self.compile_let(spaces, statement)
+                if self.tokens[0].value in statmentsType:
+                    statments.append(self.tokens.popleft())
+            if statement.value == 'while':
+                self.compile_while(spaces, statement)
+                if self.tokens[0].value in statmentsType:
+                    statments.append(self.tokens.popleft())
+            if statement.value == 'do':
+                self.compile_do(spaces, statement)
+                if self.tokens[0].value in statmentsType:
+                    statments.append(self.tokens.popleft())
+            if statement.value == 'return':
+                self.compile_return(spaces, statement)
+                if self.tokens[0].value in statmentsType:
+                    statments.append(self.tokens.popleft())
         self.output +=  ( ' ' * (spaces - 2) + '</statements>\n' )
-    def compile_let(self,spaces):
+    def compile_let(self,spaces, token: Token):
         self.output +=  ( ' ' * (spaces) + '<letStatement>\n' )
-        let = self.tokens.popleft()
+        let = token
         self.create_xml_string(let, spaces)
 
         varName = self.tokens.popleft()
@@ -270,25 +286,63 @@ class Compiler:
         
     def compile_if(self):
         pass
-    def compile_while(self):
+    def compile_while(self, spaces, token: Token):
+        self.output +=  ( ' ' * (spaces) + '<whileStatement>\n' )
+        self.create_xml_string(token, spaces)
+
+        left_bracket = self.tokens.popleft()
+        self.create_xml_string(left_bracket, spaces)
+
+        self.compile_expression(spaces + 2, nonTerminal=False)
+
+        right_bracket = self.tokens.popleft()
+        self.create_xml_string(right_bracket, spaces)
+
+        left_square_bracket = self.tokens.popleft()
+        self.create_xml_string(left_square_bracket, spaces + 2)
+
+        self.compile_statements(spaces + 2)
+        right_sqaure_bracket = self.tokens.popleft()
+        self.create_xml_string(right_sqaure_bracket, spaces)
+
+        self.output +=  ( ' ' * (spaces) + '</whileStatement>\n' )
+
         pass
-    def compile_do(self):
-        pass
-    def compile_return(self):
-        pass
+    def compile_do(self, spaces,token: Token):
+        self.output +=  ( ' ' * spaces + '<doStatement>\n' )
+        self.create_xml_string(token, spaces)
+
+        self.compile_term(spaces, True)
+
+        semiclon = self.tokens.popleft()
+        self.create_xml_string(semiclon, spaces)
+        self.output +=  ( ' ' * spaces + '</doStatement>\n' )
+    def compile_return(self,spaces, token):
+        self.output +=  ( ' ' * spaces + '<returnStatement>\n' )
+        self.create_xml_string(token, spaces)
+
+        semiclon = self.tokens.popleft()
+        self.create_xml_string(semiclon,spaces)
+        self.output +=  ( ' ' * spaces + '</returnStatement>\n' )
+        
     def compile_expression(self, spaces, nonTerminal=True):
         self.output +=  ( ' ' * spaces + '<expression>\n' )
         self.compile_term(spaces + 2)
-        
-        self.output +=  ( ' ' * spaces + '</expression>\n' )
 
-        print(self.tokens[0].value)
+        op = {"&lt;", '=', '+', '/'}
+        while self.tokens[0].value in op:
+            self.create_xml_string(self.tokens.popleft(), spaces)
+            self.compile_term(spaces)
+        self.output +=  ( ' ' * spaces + '</expression>\n' )
         if nonTerminal:
             semicolon = self.tokens.popleft()
             self.create_xml_string(semicolon, spaces)
-
-    def compile_term(self, spaces):
-        self.output +=  ( ' ' * spaces + '<term>\n' )
+        if self.tokens[0].value in op:
+            self.create_xml_string(self.tokens.popleft(), spaces)
+            self.compile_expression(spaces + 2)
+    def compile_term(self, spaces, subRoutine=False):
+        if not subRoutine:
+            self.output +=  ( ' ' * spaces + '<term>\n' )
         if self.tokens[1].value == '.':
             varNameIdentifier = self.tokens.popleft()
             self.create_xml_string(varNameIdentifier, spaces)
@@ -305,19 +359,28 @@ class Compiler:
             self.compile_expression_list(spaces + 2)
 
             rightBracket = self.tokens.popleft()
-            print(self.tokens[0].value, "inside if")
             self.create_xml_string(rightBracket, spaces)
 
+        elif self.tokens[1].value == '[' :
+            identifier = self.tokens.popleft()
+            self.create_xml_string(identifier, spaces)
+            left_square = self.tokens.popleft()
+            self.create_xml_string(left_square, spaces)
+            self.compile_expression(spaces + 2, nonTerminal=False)
+            right_square = self.tokens.popleft()
+            self.create_xml_string(right_square, spaces)
         else:
-            # TODO
             stringConstant = self.tokens.popleft()
-            print(stringConstant.value, "stringConstnat")
             self.create_xml_string(stringConstant, spaces)
-        self.output +=  ( ' ' * spaces + '</term>\n' )
+        if not subRoutine:
+            self.output +=  ( ' ' * spaces + '</term>\n' )
     def compile_expression_list(self, spaces):
         self.output +=  ( ' ' * spaces + '<expressionList>\n' )
-        self.compile_expression(spaces + 2, False)
-        self.output +=  ( ' ' * spaces + '<expressionList>\n' )
+        if self.tokens[0].value != ')':
+            self.compile_expression(spaces + 2, False)
+            self.output +=  ( ' ' * spaces + '</expressionList>\n' )
+        else:
+            self.output +=  ( ' ' * spaces + '</expressionList>\n' )
     def print_tokens(self) -> None:
         file = open("parsing_tests" + "/" + self.file_name + 'T_output.xml', 'w')
         file.write(self.output)
