@@ -401,7 +401,7 @@ class Compiler:
         self.output +=  ( ' ' * spaces + '<expression>\n' )
         self.compile_term(spaces + 2)
 
-        op = {"&lt;", '=', '+', '/', '*', '|', '-' }
+        op = {"&lt;", '=', '+', '/', '*', '|', '-', '&amp;', '>', '&gt;'}
         while self.tokens[0].value in op:
             self.create_xml_string(self.tokens.popleft(), spaces)
             self.compile_term(spaces)

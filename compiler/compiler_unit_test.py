@@ -7,6 +7,7 @@ files = [
         'ExpressionLessSquare/Square.jack',
         'ExpressionLessSquare/SquareGame.jack',
         'Square/Main.jack',
+        'Square/Square.jack',
 ]
 
 for file in files:
