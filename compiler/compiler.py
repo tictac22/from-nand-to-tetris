@@ -401,7 +401,7 @@ class Compiler:
         self.output +=  ( ' ' * spaces + '<expression>\n' )
         self.compile_term(spaces + 2)
 
-        op = {"&lt;", '=', '+', '/'}
+        op = {"&lt;", '=', '+', '/', '*', '|', '-' }
         while self.tokens[0].value in op:
             self.create_xml_string(self.tokens.popleft(), spaces)
             self.compile_term(spaces)
@@ -436,11 +436,27 @@ class Compiler:
         elif self.tokens[1].value == '[' :
             identifier = self.tokens.popleft()
             self.create_xml_string(identifier, spaces)
+
             left_square = self.tokens.popleft()
             self.create_xml_string(left_square, spaces)
+            
             self.compile_expression(spaces + 2, nonTerminal=False)
+
             right_square = self.tokens.popleft()
             self.create_xml_string(right_square, spaces)
+
+        elif self.tokens[0].value == '(':
+            leftBracket = self.tokens.popleft()
+            self.create_xml_string(leftBracket, spaces)
+
+            self.compile_expression(spaces + 2, nonTerminal=False)
+
+            rightBracket = self.tokens.popleft()
+            self.create_xml_string(rightBracket, spaces)
+        elif self.tokens[0].value in ['-', '~']:
+            unaryOp = self.tokens.popleft()
+            self.create_xml_string(unaryOp, spaces)
+            self.compile_term(spaces + 2, subRoutine=False)
         else:
             stringConstant = self.tokens.popleft()
             self.create_xml_string(stringConstant, spaces)
@@ -472,7 +488,7 @@ class Compiler:
 
 if __name__ == "__main__":
     # file_path = sys.argv[1]
-    file_path = 'ExpressionLessSquare/Square.jack'
+    file_path = 'Square/Main.jack'
     tokenizer = Tokenizer(file_path)
 
     while tokenizer.hasMoreTokens():
