@@ -3,6 +3,7 @@ from compiler import Tokenizer, Compiler
 
 files = [
         'ArrayTest/Main.jack',
+        'ExpressionLessSquare/Main.jack',
 ]
 
 for file in files:

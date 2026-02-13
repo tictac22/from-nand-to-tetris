@@ -171,29 +171,52 @@ class Compiler:
         self.create_xml_string(right_bracket, 0)
         self.output += '</class>\n'
     
-    def compile_class_var_dec(self):
-        if self.tokens[0].value != 'static' or self.tokens[0].value != 'field':
-            return
+    def compile_class_var_dec(self, spaces: int = 2):
+        while self.tokens and self.tokens[0].value in ['static', 'field']:
+            # (static | field) type varName (',' varName)* ';'
+
+            self.output += (' ' * spaces +  f'<classVarDec>\n')
+            varDecType = self.tokens.popleft()
+            self.create_xml_string(varDecType, spaces)
+
+            varType = self.tokens.popleft()
+            self.create_xml_string(varType, spaces)
+
+            varName = self.tokens.popleft()
+            self.create_xml_string(varName, spaces)
+
+            while self.tokens and self.tokens[0].value == ',':
+                comma = self.tokens.popleft()
+                self.create_xml_string(comma, spaces)
+
+                varName = self.tokens.popleft()
+                self.create_xml_string(varName, spaces)
+            semicolon = self.tokens.popleft()
+            self.create_xml_string(semicolon, spaces)
+            self.output += (' ' * spaces +  f'</classVarDec>\n' )
+
     
     def compile_subroutine(self, spaces: int):
         token = self.tokens[0]
         possibleValues = {'constructor', 'function', 'method'}
         if token.value not in  possibleValues:
             return
-        self.output += (' ' * spaces +  f'<subroutineDec>\n')
-        subRoutineType = self.tokens.popleft()
-        self.create_xml_string(subRoutineType,spaces)
-
-        subRoutineReturnType = self.tokens.popleft()
-        self.create_xml_string(subRoutineReturnType, spaces)
-
-        subRoutineName = self.tokens.popleft()
-        self.create_xml_string(subRoutineName, spaces)
         
-        self.compile_paramater_list(spaces * 2)
-        self.compile_subroutine_body(spaces * 2)
+        while self.tokens and self.tokens[0].value in possibleValues:
+            self.output += (' ' * spaces +  f'<subroutineDec>\n')
+            subRoutineType = self.tokens.popleft()
+            self.create_xml_string(subRoutineType,spaces)
 
-        self.output += ( ' ' * 2 +  f'</subroutineDec>\n' )
+            subRoutineReturnType = self.tokens.popleft()
+            self.create_xml_string(subRoutineReturnType, spaces)
+
+            subRoutineName = self.tokens.popleft()
+            self.create_xml_string(subRoutineName, spaces)
+            
+            self.compile_paramater_list(spaces * 2)
+            self.compile_subroutine_body(spaces * 2)
+
+            self.output += ( ' ' * spaces +  f'</subroutineDec>\n' )
 
     def compile_paramater_list(self, spaces):
         left_bracket = self.tokens.popleft()
@@ -246,10 +269,12 @@ class Compiler:
 
     def compile_statements(self, spaces):
         self.output +=  ( ' ' * (spaces - 2) + '<statements>\n' )
-
+        if self.tokens[0].value not in ['let', 'while', 'do', 'return', 'if']:
+            self.output +=  ( ' ' * (spaces - 2) + '</statements>\n' )
+            return
         statments = deque()
         statments.append(self.tokens.popleft())
-        statmentsType = {'let', 'while', 'do', 'return'}
+        statmentsType = {'let', 'while', 'do', 'return', 'if'}
         while statments:
             statement = statments.popleft()
             if statement.value == 'let':
@@ -268,6 +293,10 @@ class Compiler:
                 self.compile_return(spaces, statement)
                 if self.tokens[0].value in statmentsType:
                     statments.append(self.tokens.popleft())
+            if statement.value == 'if':
+                self.compile_if(spaces, statement)
+                if self.tokens[0].value in statmentsType:
+                    statments.append(self.tokens.popleft())
         self.output +=  ( ' ' * (spaces - 2) + '</statements>\n' )
     def compile_let(self,spaces, token: Token):
         self.output +=  ( ' ' * (spaces) + '<letStatement>\n' )
@@ -284,8 +313,39 @@ class Compiler:
 
         self.output +=  ( ' ' * (spaces) + '</letStatement>\n' )
         
-    def compile_if(self):
-        pass
+    def compile_if(self, spaces, token: Token):
+        self.output +=  ( ' ' * (spaces) + '<ifStatement>\n' )
+        self.create_xml_string(token, spaces)
+
+        left_bracket = self.tokens.popleft()
+        self.create_xml_string(left_bracket, spaces)
+
+        self.compile_expression(spaces + 2, nonTerminal=False)
+
+        right_bracket = self.tokens.popleft()
+        self.create_xml_string(right_bracket, spaces)
+
+        left_square_bracket = self.tokens.popleft()
+        self.create_xml_string(left_square_bracket, spaces + 2)
+
+
+        self.compile_statements(spaces + 2)
+        right_sqaure_bracket = self.tokens.popleft()
+        self.create_xml_string(right_sqaure_bracket, spaces)
+
+        if self.tokens and self.tokens[0].value == 'else':
+            elseToken = self.tokens.popleft()
+            self.create_xml_string(elseToken, spaces)
+
+            left_square_bracket = self.tokens.popleft()
+            self.create_xml_string(left_square_bracket, spaces + 2)
+
+            self.compile_statements(spaces + 2)
+            right_sqaure_bracket = self.tokens.popleft()
+            self.create_xml_string(right_sqaure_bracket, spaces)
+        
+        self.output +=  ( ' ' * (spaces) + '</ifStatement>\n' )
+
     def compile_while(self, spaces, token: Token):
         self.output +=  ( ' ' * (spaces) + '<whileStatement>\n' )
         self.create_xml_string(token, spaces)
@@ -388,7 +448,7 @@ class Compiler:
 
 if __name__ == "__main__":
     # file_path = sys.argv[1]
-    file_path = 'ArrayTest/Main.jack'
+    file_path = 'ExpressionLessSquare/Main.jack'
     tokenizer = Tokenizer(file_path)
 
     while tokenizer.hasMoreTokens():
