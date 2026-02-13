@@ -9,7 +9,7 @@ files = [
         'ExpressionLessSquare/SquareGame.jack',
         'Square/Main.jack',
         'Square/Square.jack',
-        'Square/SquareGame.jack'
+        'Square/SquareGame.jack',
 ]
 for file in files:
     tokenizer = Tokenizer(file)
