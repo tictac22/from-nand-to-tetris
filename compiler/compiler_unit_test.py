@@ -5,6 +5,7 @@ files = [
         'ArrayTest/Main.jack',
         'ExpressionLessSquare/Main.jack',
         'ExpressionLessSquare/Square.jack',
+        'ExpressionLessSquare/SquareGame.jack',
 ]
 
 for file in files:
