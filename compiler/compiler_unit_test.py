@@ -4,6 +4,7 @@ from compiler import Tokenizer, Compiler
 files = [
         'ArrayTest/Main.jack',
         'ExpressionLessSquare/Main.jack',
+        'ExpressionLessSquare/Square.jack',
 ]
 
 for file in files:

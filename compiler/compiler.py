@@ -223,8 +223,17 @@ class Compiler:
         self.create_xml_string(left_bracket, spaces //2)
 
         self.output += ( ' ' * spaces + f'<parameterList>\n' )
-        if self.tokens[0].tokenType == TokenType.keyword:
-            pass
+
+        while self.tokens[0].value != ')':
+            paramType = self.tokens.popleft()
+            self.create_xml_string(paramType, spaces)
+
+            paramName = self.tokens.popleft()
+            self.create_xml_string(paramName, spaces)
+
+            if self.tokens[0].value == ',':
+                comma = self.tokens.popleft()
+                self.create_xml_string(comma, spaces)
 
         self.output += ( ' ' * spaces + f'</parameterList>\n' )
         right_bracket = self.tokens.popleft()
@@ -381,6 +390,9 @@ class Compiler:
         self.output +=  ( ' ' * spaces + '<returnStatement>\n' )
         self.create_xml_string(token, spaces)
 
+        if self.tokens[0].value != ';':
+            self.compile_expression(spaces + 2, nonTerminal=False)
+
         semiclon = self.tokens.popleft()
         self.create_xml_string(semiclon,spaces)
         self.output +=  ( ' ' * spaces + '</returnStatement>\n' )
@@ -403,6 +415,7 @@ class Compiler:
     def compile_term(self, spaces, subRoutine=False):
         if not subRoutine:
             self.output +=  ( ' ' * spaces + '<term>\n' )
+        
         if self.tokens[1].value == '.':
             varNameIdentifier = self.tokens.popleft()
             self.create_xml_string(varNameIdentifier, spaces)
@@ -415,7 +428,6 @@ class Compiler:
 
             leftBracket = self.tokens.popleft()
             self.create_xml_string(leftBracket, spaces)
-
             self.compile_expression_list(spaces + 2)
 
             rightBracket = self.tokens.popleft()
@@ -432,15 +444,27 @@ class Compiler:
         else:
             stringConstant = self.tokens.popleft()
             self.create_xml_string(stringConstant, spaces)
+            
+            if self.tokens and self.tokens[0].value == '(':
+                leftBracket = self.tokens.popleft()
+                self.create_xml_string(leftBracket, spaces)
+                self.compile_expression_list(spaces + 2)
+
+                rightBracket = self.tokens.popleft()
+                self.create_xml_string(rightBracket, spaces)
+
         if not subRoutine:
             self.output +=  ( ' ' * spaces + '</term>\n' )
     def compile_expression_list(self, spaces):
         self.output +=  ( ' ' * spaces + '<expressionList>\n' )
         if self.tokens[0].value != ')':
             self.compile_expression(spaces + 2, False)
-            self.output +=  ( ' ' * spaces + '</expressionList>\n' )
-        else:
-            self.output +=  ( ' ' * spaces + '</expressionList>\n' )
+            while self.tokens[0].value == ',':
+                comma = self.tokens.popleft()
+                self.create_xml_string(comma, spaces)
+
+                self.compile_expression(spaces + 2, False)
+        self.output +=  ( ' ' * spaces + '</expressionList>\n' )
     def print_tokens(self) -> None:
         file = open("parsing_tests" + "/" + self.file_name + 'T_output.xml', 'w')
         file.write(self.output)
@@ -448,7 +472,7 @@ class Compiler:
 
 if __name__ == "__main__":
     # file_path = sys.argv[1]
-    file_path = 'ExpressionLessSquare/Main.jack'
+    file_path = 'ExpressionLessSquare/Square.jack'
     tokenizer = Tokenizer(file_path)
 
     while tokenizer.hasMoreTokens():
